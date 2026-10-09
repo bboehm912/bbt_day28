@@ -16,6 +16,10 @@
   --border: #cbd5e1;
 }
 
+* {
+  box-sizing: border-box;
+}
+
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   background-color: var(--bg-main);
@@ -66,6 +70,7 @@ body {
   font-size: 0.95em;
   cursor: pointer;
   color: #334155;
+  transition: all 0.2s ease;
 }
 .tab-btn.active { background: var(--primary); color: #ffffff; border-color: var(--primary); }
 
@@ -165,41 +170,102 @@ body {
 }
 .ctrl-btn:disabled { background: #94a3b8; }
 
-.resource-card {
+/* Student Work Checkpoint Form Styling */
+.form-group {
+  margin-bottom: 24px;
+  padding: 20px;
   background: #f8fafc;
   border: 1px solid var(--border);
-  border-left: 4px solid var(--primary);
-  padding: 16px;
   border-radius: 8px;
-  margin-bottom: 14px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
 }
 
-.form-group {
-  margin-bottom: 22px;
-  padding-bottom: 18px;
-  border-bottom: 1px solid #e2e8f0;
+.form-group label.field-label {
+  font-weight: 700;
+  font-size: 1.05em;
+  color: var(--text-dark);
+  margin-bottom: 6px;
+  display: block;
 }
-label { font-weight: bold; margin-bottom: 6px; display: block; }
-input, textarea, select {
+
+.field-subtext {
+  font-size: 0.92em;
+  color: #334155;
+  margin-bottom: 12px;
+  line-height: 1.45;
+}
+
+input[type="text"], input[type="date"], textarea, select {
   width: 100%;
-  padding: 10px;
+  padding: 12px;
   border: 1px solid var(--border);
   border-radius: 6px;
+  background: #ffffff;
+  color: var(--text-dark);
+  font-size: 0.95em;
+  font-family: inherit;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+input[type="text"]::placeholder, textarea::placeholder {
+  color: #94a3b8;
+}
+
+input[type="text"]:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(21, 128, 61, 0.15);
+}
+
+.option-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.option-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 14px;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.95em;
+  color: var(--text-dark);
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.option-label:hover {
+  background: #f0fdf4;
+  border-color: var(--primary);
+}
+
+.option-label input[type="radio"], .option-label input[type="checkbox"] {
+  margin-top: 3px;
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary);
+  cursor: pointer;
 }
 
 .submit-btn {
   width: 100%;
   background: var(--primary);
   color: white;
-  padding: 14px;
+  padding: 16px;
   font-size: 1.05em;
   font-weight: bold;
   border: none;
   border-radius: 8px;
   cursor: pointer;
+  margin-top: 10px;
+  transition: background 0.2s;
+}
+
+.submit-btn:hover {
+  background: var(--primary-dark);
 }
 
 .tab-content { display: none; }
@@ -209,6 +275,17 @@ input, textarea, select {
 .italic { font-style: italic; }
 .subtitle { color: var(--text-muted); }
 
+/* Print Optimizations */
+@media print {
+  body { background-color: #fff; color: #000; padding: 0; }
+  .container { max-width: 100%; }
+  .nav-tabs, .deck-controls, .bellringer-box button, .submit-btn, .header-card { display: none !important; }
+  .tab-content { display: block !important; }
+  #deck-tab { display: none !important; }
+  #form-tab { display: block !important; box-shadow: none; border: none; padding: 0; }
+  .form-group { page-break-inside: avoid; border: 1px solid #ccc; background: #fff; }
+  input, textarea, select { border: 1px solid #999 !important; background: #fff !important; }
+}
 </style>
 </head>
 <body>
@@ -236,8 +313,7 @@ input, textarea, select {
 
   <!-- TABS -->
   <div class="nav-tabs">
-    <button class="tab-btn active" onclick="switchTab('deck')">Deck</button>
-    <button class="tab-btn" onclick="switchTab('res')">Resource Hub</button>
+    <button class="tab-btn active" onclick="switchTab('deck')">Slide Deck</button>
     <button class="tab-btn" onclick="switchTab('form')">Student Work Checkpoint</button>
   </div>
 
@@ -266,15 +342,6 @@ input, textarea, select {
     </div>
   </div>
 
-  <!-- TAB: RESOURCE HUB -->
-  <div id="res-tab" class="card tab-content">
-    <h3>Lesson Resource & Reference Hub</h3>
-    <p class="muted">Access official course references below.</p>
-    <div id="resource-list">
-      <!-- Resources injected by script.js -->
-    </div>
-  </div>
-
   <!-- TAB: STUDENT WORK CHECKPOINT -->
   <div id="form-tab" class="card tab-content">
     <h3>Student Work Checkpoint & Reflection</h3>
@@ -293,16 +360,16 @@ let bellringers = [];
 
 // Stock image pool for default visual slides
 const stockImagePool = [
-  'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=300&q=80', // Turtle / Nature
-  'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=300&q=80', // Water / Earth-Diver
-  'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=300&q=80', // Ecology / Forest
-  'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=300&q=80', // Campfire / Orality
-  'https://images.unsplash.com/photo-1457369804613-52c61a468e7d?auto=format&fit=crop&w=300&q=80', // Literature / History
-  'https://images.unsplash.com/photo-1455390582262-044cdead277a?auto=format&fit=crop&w=300&q=80'  // Writing Workshop
+  'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=300&q=80',
+  'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=300&q=80',
+  'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=300&q=80',
+  'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=300&q=80',
+  'https://images.unsplash.com/photo-1457369804613-52c61a468e7d?auto=format&fit=crop&w=300&q=80',
+  'https://images.unsplash.com/photo-1455390582262-044cdead277a?auto=format&fit=crop&w=300&q=80'
 ];
 
 // Emoji fallback pool
-const iconPool = ['🐢', '🌊', '🌱', '🗣️', '☯️', '📝'];
+const iconPool = ['🎥', '✂️', '🎙️', '🎧', '⏱️', '📝'];
 
 function renderSlides(slides) {
   const stage = document.getElementById('slide-stage');
@@ -313,9 +380,7 @@ function renderSlides(slides) {
     wrapper.className = 'slide' + (index === 0 ? ' active' : '');
     wrapper.id = `slide-${index + 1}`;
 
-    // Priority 1: slide.image OR Stock Web Image
     const imageUrl = slide.image || stockImagePool[index % stockImagePool.length];
-    // Fallback: slide.icon OR Emoji Pool
     const fallbackEmoji = slide.icon || iconPool[index % iconPool.length];
 
     const visualMediaHTML = `
@@ -347,6 +412,7 @@ function renderSlides(slides) {
     stage.appendChild(wrapper);
   });
 }
+
 function initLesson(data) {
   bellringers = data.bellringers || [];
   totalSlides = (data.slides || []).length || 1;
@@ -354,7 +420,6 @@ function initLesson(data) {
   document.getElementById('slide-tracker').innerText = `Slide 1 of ${totalSlides}`;
 
   renderSlides(data.slides || []);
-  renderResources(data.resources || []);
   renderForm(data.form || []);
 
   randomizeBellringer();
@@ -379,67 +444,6 @@ function moveSlide(dir) {
   document.getElementById('next-btn').disabled = currentSlide === totalSlides;
 }
 
-function renderResources(resources) {
-  const container = document.getElementById('resource-list');
-  container.innerHTML = '';
-
-  let resourceList = [];
-
-  if (Array.isArray(resources)) {
-    resourceList = resources;
-  } else if (resources && typeof resources === 'object') {
-    if (Array.isArray(resources.buttons)) {
-      resourceList = resources.buttons;
-    } else if (Array.isArray(resources.files)) {
-      resourceList = resources.files;
-    } else if (Array.isArray(resources.items)) {
-      resourceList = resources.items;
-    } else if (resources.file || resources.link || resources.url) {
-      resourceList = [resources];
-    }
-  }
-
-  if (!resourceList.length && resources && typeof resources === 'object' && resources.title && (resources.file || resources.link || resources.url)) {
-    resourceList = [resources];
-  }
-
-  resourceList.forEach(res => {
-    const card = document.createElement('div');
-    card.className = 'resource-card';
-
-    if (typeof res === 'string') {
-      const cleanText = res.trim();
-      const isFile = /\.(pdf|docx?|pptx?|xlsx?)$/i.test(cleanText);
-      if (!isFile) return;
-
-      const label = cleanText.split('/').pop();
-      card.innerHTML = `
-        <div>
-          <strong>${label}</strong><br/>
-          <small>Repository file</small>
-        </div>
-        <a href="${cleanText}" target="_blank" rel="noopener noreferrer" class="ctrl-btn">Open Resource</a>
-      `;
-      container.appendChild(card);
-      return;
-    }
-
-    const resourceUrl = res.file || res.link || res.url || res.href || '#';
-    const resourceTitle = res.title || res.name || res.label || 'Resource Item';
-    const resourceDescription = res.description || res.summary || '';
-    const fileName = resourceUrl && typeof resourceUrl === 'string' ? resourceUrl.split('/').pop() : '';
-
-    card.innerHTML = `
-      <div>
-        <strong>${resourceTitle || fileName || 'Resource Item'}</strong><br/>
-        <small>${resourceDescription}</small>
-      </div>
-      ${resourceUrl && resourceUrl !== '#' ? `<a href="${resourceUrl}" target="_blank" rel="noopener noreferrer" class="ctrl-btn">Open Resource</a>` : ''}
-    `;
-    container.appendChild(card);
-  });
-}
-
 function renderForm(fields) {
   const form = document.getElementById('checkpoint-form');
   const submitBtn = form.querySelector('.submit-btn');
@@ -447,34 +451,51 @@ function renderForm(fields) {
 
   const fieldList = Array.isArray(fields) ? fields : [];
 
-  fieldList.forEach(field => {
+  fieldList.forEach((field, idx) => {
     const group = document.createElement('div');
     group.className = 'form-group';
 
-    const label = field.label || field.prompt || `Question ${field.field_id || ''}`.trim() || 'Question';
-    const id = `field_${(field.field_id || label).toString().replace(/\s+/g, '_').toLowerCase()}`;
+    const labelText = field.label || field.question || field.prompt || `Question ${field.field_id || field.id || (idx + 1)}`;
+    const id = `field_${(field.field_id || field.id || idx).toString().replace(/[^\w]/g, '_').toLowerCase()}`;
+    const placeholder = field.placeholder ? field.placeholder.replace(/"/g, '&quot;') : '';
 
+    let subtextHTML = field.subtext ? `<div class="field-subtext">${field.subtext}</div>` : '';
     let inputHTML = '';
-    if (field.type === 'short_answer' || field.type === 'short_text' || field.type === 'text') {
-      inputHTML = `<input type="text" id="${id}" ${field.required ? 'required' : ''} />`;
-    } else if (field.type === 'date') {
-      inputHTML = `<input type="date" id="${id}" ${field.required ? 'required' : ''} />`;
-    } else if (field.type === 'long_text' || field.type === 'quote_citation' || field.type === 'reflection') {
-      inputHTML = `<textarea id="${id}" rows="5" ${field.required ? 'required' : ''}></textarea>`;
-    } else if (field.type === 'multiple_choice' || field.type === 'true_false') {
-      const options = field.type === 'true_false' ? ['True', 'False'] : (field.options || []);
-      inputHTML = options.map((option, index) => `<label><input type="radio" id="${id}_${index}" name="${id}" value="${option}" ${field.required ? 'required' : ''} /> ${option}</label>`).join('<br/>');
-    } else if (field.type === 'checkbox') {
-      inputHTML = (field.options || []).map((option, index) => `<label><input type="checkbox" id="${id}_${index}" name="${id}" value="${option}" /> ${option}</label>`).join('<br/>');
-    } else if (field.type === 'rating_scale') {
-      inputHTML = `<select id="${id}">${(field.options || []).map(o => `<option>${o}</option>`).join('')}</select>`;
-    } else if (field.type === 'select_rubric') {
-      inputHTML = `<select id="${id}"><option>-- Select Rubric Benchmark Level --</option>${(field.options || []).map(o => `<option>${o}</option>`).join('')}</select>`;
-    } else if (field.type === 'checkbox_group' || field.type === 'multi_select') {
-      inputHTML = (field.options || []).map(o => `<label><input type="checkbox" name="${id}" value="${o}" /> ${o}</label>`).join('<br/>');
+
+    const type = (field.type || 'short_answer').toLowerCase();
+
+    if (type === 'short_answer' || type === 'short_text' || type === 'text' || type === 'fill_in_blank') {
+      inputHTML = `<input type="text" id="${id}" name="${id}" placeholder="${placeholder || 'Type your answer here...'}" ${field.required !== false ? 'required' : ''} />`;
+    } else if (type === 'date') {
+      inputHTML = `<input type="date" id="${id}" name="${id}" ${field.required !== false ? 'required' : ''} />`;
+    } else if (type === 'long_text' || type === 'quote_citation' || type === 'reflection') {
+      inputHTML = `<textarea id="${id}" name="${id}" rows="4" placeholder="${placeholder || 'Type your detailed response here...'}" ${field.required !== false ? 'required' : ''}></textarea>`;
+    } else if (type === 'multiple_choice' || type === 'true_false') {
+      const options = type === 'true_false' ? ['True', 'False'] : (field.options || []);
+      inputHTML = `<div class="option-list">` + options.map((option, index) => `
+        <label class="option-label">
+          <input type="radio" id="${id}_${index}" name="${id}" value="${option.replace(/"/g, '&quot;')}" ${field.required !== false ? 'required' : ''} />
+          <span>${option}</span>
+        </label>
+      `).join('') + `</div>`;
+    } else if (type === 'checkbox' || type === 'checkbox_group' || type === 'multi_select') {
+      const options = field.options || [];
+      inputHTML = `<div class="option-list">` + options.map((option, index) => `
+        <label class="option-label">
+          <input type="checkbox" id="${id}_${index}" name="${id}[]" value="${option.replace(/"/g, '&quot;')}" />
+          <span>${option}</span>
+        </label>
+      `).join('') + `</div>`;
+    } else if (type === 'rating_scale' || type === 'select_rubric') {
+      const options = field.options || [];
+      const promptMsg = type === 'select_rubric' ? '-- Select Rubric Benchmark Level --' : '-- Select Rating / Benchmark --';
+      inputHTML = `<select id="${id}" name="${id}" ${field.required !== false ? 'required' : ''}>
+        <option value="">${promptMsg}</option>
+        ${options.map(o => `<option value="${o.replace(/"/g, '&quot;')}">${o}</option>`).join('')}
+      </select>`;
     }
 
-    group.innerHTML = `<label for="${id}">${label}</label>${inputHTML}`;
+    group.innerHTML = `<label class="field-label" for="${id}">${labelText}</label>${subtextHTML}${inputHTML}`;
     form.appendChild(group);
   });
 
@@ -482,21 +503,156 @@ function renderForm(fields) {
 }
 
 function switchTab(key) {
-  document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-  document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+  const btns = document.querySelectorAll('.tab-btn');
+  const tabs = document.querySelectorAll('.tab-content');
+
+  btns.forEach(btn => btn.classList.remove('active'));
+  tabs.forEach(tab => tab.classList.remove('active'));
 
   if (key === 'deck') {
-    document.querySelectorAll('.tab-btn')[0].classList.add('active');
+    btns[0].classList.add('active');
     document.getElementById('deck-tab').classList.add('active');
-  } else if (key === 'res') {
-    document.querySelectorAll('.tab-btn')[1].classList.add('active');
-    document.getElementById('res-tab').classList.add('active');
   } else if (key === 'form') {
-    document.querySelectorAll('.tab-btn')[2].classList.add('active');
+    btns[1].classList.add('active');
     document.getElementById('form-tab').classList.add('active');
   }
 }
-window.addEventListener('DOMContentLoaded', () => initLesson({"day": 28, "date": "October 9", "subject": "Basic Broadcast Technology: A CTE Pathway Course", "unit": "Unit 6: Basic Editing Concepts", "topic": "Editing Seminar: Rough Cut Review", "primary_focus": "Peer review of weekly editing projects focusing on J/L cut execution.", "core_objectives": "Construct comparative analytical drafts using textual evidence from script vs. edit.", "weekly_standards_focus": ["CTB.12.03 (Editing Principles, Continuity, & Emphasis)", "CTB.01.03 (NLE Technical Terminology)"], "bellringers": ["What constitutes constructive peer review in a broadcast video post-production workflow?", "How do script audio timecodes serve as textual evidence when evaluating an edit draft?", "Identify three common criteria used to evaluate J-cut and L-cut accuracy in news packages.", "Why is alignment between spoken script intent and visual timeline execution essential in broadcast journalism?"], "slides": [{"title": "Welcome to the Editing Seminar: Objectives", "standard": "CTB.12.03", "bullets": ["Conduct objective peer reviews of Week 6 rough cut editing submissions.", "Evaluate technical execution of J-cuts, L-cuts, and timeline pacing.", "Draft comparative analytical evaluations comparing script intent against final sequence edits."], "callout": "Peer critique builds professional quality control standards and sharpens analytical editing skills."}, {"title": "Criteria for Rough Cut Evaluation", "standard": "CTB.12.03", "bullets": ["Check for smooth execution of three J-cuts and three L-cuts in news segments.", "Verify audio dialogue levels peak consistently between -12 dB and -6 dB without clipping.", "Assess whether visual pacing supports story clarity and audience engagement."], "callout": "Rubric-driven evaluation ensures consistent, technical feedback across broadcast packages."}, {"title": "Analyzing Script vs. Edit Alignment", "standard": "CTB.12.03", "bullets": ["Cross-reference dialogue delivery in the timeline edit against original reporter scripts.", "Identify omitted soundbites, altered sentence structures, or missing B-roll cues.", "Ensure factual integrity and journalistic accuracy were preserved during editing."], "callout": "Textual evidence from scripts verifies whether video edits fulfill editorial narrative goals."}, {"title": "Constructing Comparative Analytical Drafts", "standard": "CTB.12.03", "bullets": ["Cite exact timeline timecodes (e.g., 00:00:24:12) as evidence for structural critiques.", "Compare written script stage directions against actual video visual placements.", "Synthesize findings into structured, written comparative feedback reports."], "callout": "Grounding critique in precise script and timecode citations ensures actionable technical revision."}, {"title": "Evaluating J-Cut Precision in Peer Work", "standard": "CTB.01.03", "bullets": ["Determine if audio lead times feel natural or introduce distracting pre-audio gaps.", "Confirm incoming audio dialogue matches the identity of the incoming visual speaker.", "Note any micro-clicks or pops at audio lead transition points."], "callout": "J-cut evaluation focuses on seamless audio anticipation prior to visual scene transitions."}, {"title": "Evaluating L-Cut Precision in Peer Work", "standard": "CTB.01.03", "bullets": ["Analyze whether video cutaways/reaction shots align logically with continuing voiceover.", "Ensure reaction shots match subject emotional tone and journalistic relevance.", "Verify that audio trails decay naturally without harsh clip boundary cuts."], "callout": "Effective L-cuts enrich story context while preserving dialogue continuity."}, {"title": "Assessing Pacing and Sequence Rhythm", "standard": "CTB.12.03", "bullets": ["Identify shot sequences that linger too long or cut prematurely.", "Evaluate whether cutting on action was successfully applied to dynamic shots.", "Check social media teasers for compliance with strict 15-second duration limits."], "callout": "Pacing analysis determines if story momentum keeps viewers engaged throughout the broadcast."}, {"title": "Audio Mix and Dynamic Balance Audit", "standard": "CTB.12.03", "bullets": ["Audit voiceover clarity against background music beds and ambient sound effects.", "Ensure background track ducking allows dialogue to remain primary in the mix.", "Flag any abrupt audio level jumps between adjacent interview clips."], "callout": "Clear audio mixing is essential for broadcast transmission compliance and viewer comprehension."}, {"title": "Formulating Constructive Technical Feedback", "standard": "CTB.12.03", "bullets": ["Use the 'Praise-Critique-Action' structure when providing peer notes.", "Avoid subjective opinions (e.g., 'I didn't like it') in favor of technical terms (e.g., 'J-cut audio leads by 45 frames, creating lag').", "Suggest specific tool operations (e.g., 'Apply Rolling Edit tool at 00:14:02')."], "callout": "Actionable, terminology-rich feedback helps peers execute fast, efficient rough cut revisions."}, {"title": "Interactive Peer Review Roundtables", "standard": "CTB.12.03", "bullets": ["Pairs exchange project files/renders and corresponding written broadcast scripts.", "Reviewers complete analytical draft rubrics with timecode notes.", "Editors defend structural choices using script intention and editing guidelines."], "callout": "Collaborative peer roundtables mirror professional newsroom edit review procedures."}, {"title": "Revising Edits Based on Seminar Feedback", "standard": "CTB.12.03", "bullets": ["Prioritize critical fixes: audio distortion, missing split edits, and duration errors.", "Execute fine trimming on timeline clips using peer timecode logs.", "Prepare final master export sequence for unit portfolio assessment."], "callout": "Iterative trimming based on peer critique turns rough cut assemblies into polished broadcast masters."}, {"title": "Summary & Week 6 Portfolio Submission", "standard": "CTB.01.03", "bullets": ["Consolidate rough cut review sheets, comparative drafts, and final timeline renders.", "Verify all exports meet broadcast technical parameters and file naming standards.", "Submit Unit 6 week-long projects to the course digital repository."], "callout": "Systematic portfolio submission verifies mastery of basic editing concepts and standards."}], "resources": ["None"], "form": [{"id": 1, "type": "multiple_choice", "question": "What primary evidence should be cited when writing a comparative analytical draft of an edit?", "options": ["Personal feelings", "Exact timeline timecodes and script text citations", "Video file file sizes", "Software version numbers"], "correct_answer": "Exact timeline timecodes and script text citations"}, {"id": 2, "type": "multiple_choice", "question": "What audio dialogue level range is evaluated during the peer audio mix audit?", "options": ["0 dB to +6 dB", "-12 dB to -6 dB", "-30 dB to -24 dB", "-60 dB to -40 dB"], "correct_answer": "-12 dB to -6 dB"}, {"id": 3, "type": "multiple_choice", "question": "What is the recommended structure for delivering professional peer critique in the editing seminar?", "options": ["Critique-Only", "Praise-Critique-Action", "Random Comments", "Grade-Only"], "correct_answer": "Praise-Critique-Action"}, {"id": 4, "type": "short_answer", "question": "Why must feedback in a broadcast editing seminar use specific NLE technical terminology?", "correct_answer": "Technical terminology provides clear, actionable instructions on exact tool operations and timeline fixes."}, {"id": 5, "type": "short_answer", "question": "Explain how comparing a written broadcast script against a rough cut edit ensures journalistic integrity.", "correct_answer": "It verifies that the edited sequence accurately represents the reported facts, quotes, and narrative structure specified in the script."}, {"id": 6, "type": "true_false", "question": "Peer reviews should focus purely on subjective personal preference rather than standardized rubric criteria.", "correct_answer": "False"}, {"id": 7, "type": "true_false", "question": "Timecodes provide frame-accurate references for locating specific edit errors on a sequence timeline.", "correct_answer": "True"}, {"id": 8, "type": "multiple_choice", "question": "What format is standard timecode represented in?", "options": ["HH:MM:SS:FF", "MM:SS:MS", "DD:HH:MM", "SS:FF"], "correct_answer": "HH:MM:SS:FF"}, {"id": 9, "type": "fill_in_blank", "question": "When evaluating an L-Cut, reviewers check whether the continuing dialogue matches the visual ________ shot.", "correct_answer": "reaction / B-roll"}, {"id": 10, "type": "short_answer", "question": "What is the final step completed by students after receiving peer review notes in Friday's seminar?", "correct_answer": "Executing timeline revisions based on timecode notes and submitting the final sequence for portfolio assessment."}]}));
+
+window.addEventListener('DOMContentLoaded', () => initLesson({
+  "day": 28,
+  "date": "October 9",
+  "subject": "Basic Broadcast Technology: A CTE Pathway Course",
+  "unit": "Unit 6: Basic Editing Concepts",
+  "topic": "Editing Seminar: Rough Cut Review",
+  "primary_focus": "Peer review of weekly editing projects focusing on J/L cut execution.",
+  "core_objectives": "Construct comparative analytical drafts using textual evidence from script vs. edit.",
+  "weekly_standards_focus": ["CTB.12.03 (Editing Principles, Continuity, & Emphasis)", "CTB.01.03 (NLE Technical Terminology)"],
+  "bellringers": [
+    "What constitutes constructive peer review in a broadcast video post-production workflow?",
+    "How do script audio timecodes serve as textual evidence when evaluating an edit draft?",
+    "Identify three common criteria used to evaluate J-cut and L-cut accuracy in news packages.",
+    "Why is alignment between spoken script intent and visual timeline execution essential in broadcast journalism?"
+  ],
+  "slides": [
+    {"title": "Welcome to the Editing Seminar: Objectives", "standard": "CTB.12.03", "bullets": ["Conduct objective peer reviews of Week 6 rough cut editing submissions.", "Evaluate technical execution of J-cuts, L-cuts, and timeline pacing.", "Draft comparative analytical evaluations comparing script intent against final sequence edits."], "callout": "Peer critique builds professional quality control standards and sharpens analytical editing skills."},
+    {"title": "Criteria for Rough Cut Evaluation", "standard": "CTB.12.03", "bullets": ["Check for smooth execution of three J-cuts and three L-cuts in news segments.", "Verify audio dialogue levels peak consistently between -12 dB and -6 dB without clipping.", "Assess whether visual pacing supports story clarity and audience engagement."], "callout": "Rubric-driven evaluation ensures consistent, technical feedback across broadcast packages."},
+    {"title": "Analyzing Script vs. Edit Alignment", "standard": "CTB.12.03", "bullets": ["Cross-reference dialogue delivery in the timeline edit against original reporter scripts.", "Identify omitted soundbites, altered sentence structures, or missing B-roll cues.", "Ensure factual integrity and journalistic accuracy were preserved during editing."], "callout": "Textual evidence from scripts verifies whether video edits fulfill editorial narrative goals."},
+    {"title": "Constructing Comparative Analytical Drafts", "standard": "CTB.12.03", "bullets": ["Cite exact timeline timecodes (e.g., 00:00:24:12) as evidence for structural critiques.", "Compare written script stage directions against actual video visual placements.", "Synthesize findings into structured, written comparative feedback reports."], "callout": "Grounding critique in precise script and timecode citations ensures actionable technical revision."},
+    {"title": "Evaluating J-Cut Precision in Peer Work", "standard": "CTB.01.03", "bullets": ["Determine if audio lead times feel natural or introduce distracting pre-audio gaps.", "Confirm incoming audio dialogue matches the identity of the incoming visual speaker.", "Note any micro-clicks or pops at audio lead transition points."], "callout": "J-cut evaluation focuses on seamless audio anticipation prior to visual scene transitions."},
+    {"title": "Evaluating L-Cut Precision in Peer Work", "standard": "CTB.01.03", "bullets": ["Analyze whether video cutaways/reaction shots align logically with continuing voiceover.", "Ensure reaction shots match subject emotional tone and journalistic relevance.", "Verify that audio trails decay naturally without harsh clip boundary cuts."], "callout": "Effective L-cuts enrich story context while preserving dialogue continuity."},
+    {"title": "Assessing Pacing and Sequence Rhythm", "standard": "CTB.12.03", "bullets": ["Identify shot sequences that linger too long or cut prematurely.", "Evaluate whether cutting on action was successfully applied to dynamic shots.", "Check social media teasers for compliance with strict 15-second duration limits."], "callout": "Pacing analysis determines if story momentum keeps viewers engaged throughout the broadcast."},
+    {"title": "Audio Mix and Dynamic Balance Audit", "standard": "CTB.12.03", "bullets": ["Audit voiceover clarity against background music beds and ambient sound effects.", "Ensure background track ducking allows dialogue to remain primary in the mix.", "Flag any abrupt audio level jumps between adjacent interview clips."], "callout": "Clear audio mixing is essential for broadcast transmission compliance and viewer comprehension."},
+    {"title": "Formulating Constructive Technical Feedback", "standard": "CTB.12.03", "bullets": ["Use the 'Praise-Critique-Action' structure when providing peer notes.", "Avoid subjective opinions (e.g., 'I didn't like it') in favor of technical terms (e.g., 'J-cut audio leads by 45 frames, creating lag').", "Suggest specific tool operations (e.g., 'Apply Rolling Edit tool at 00:14:02')."], "callout": "Actionable, terminology-rich feedback helps peers execute fast, efficient rough cut revisions."},
+    {"title": "Interactive Peer Review Roundtables", "standard": "CTB.12.03", "bullets": ["Pairs exchange project files/renders and corresponding written broadcast scripts.", "Reviewers complete analytical draft rubrics with timecode notes.", "Editors defend structural choices using script intention and editing guidelines."], "callout": "Collaborative peer roundtables mirror professional newsroom edit review procedures."},
+    {"title": "Revising Edits Based on Seminar Feedback", "standard": "CTB.12.03", "bullets": ["Prioritize critical fixes: audio distortion, missing split edits, and duration errors.", "Execute fine trimming on timeline clips using peer timecode logs.", "Prepare final master export sequence for unit portfolio assessment."], "callout": "Iterative trimming based on peer critique turns rough cut assemblies into polished broadcast masters."},
+    {"title": "Summary & Week 6 Portfolio Submission", "standard": "CTB.01.03", "bullets": ["Consolidate rough cut review sheets, comparative drafts, and final timeline renders.", "Verify all exports meet broadcast technical parameters and file naming standards.", "Submit Unit 6 week-long projects to the course digital repository."], "callout": "Systematic portfolio submission verifies mastery of basic editing concepts and standards."}
+  ],
+  "form": [
+    {
+      "field_id": 1,
+      "type": "short_answer",
+      "label": "Student Name & Class Period",
+      "placeholder": "Enter full name and class period...",
+      "required": true
+    },
+    {
+      "field_id": 2,
+      "type": "multiple_choice",
+      "label": "1. Comparative Analysis Evidence (CTB.12.03)",
+      "subtext": "What primary evidence should be cited when writing a comparative analytical evaluation of an edit sequence?",
+      "options": [
+        "A) Personal feelings and general impressions",
+        "B) Frame-accurate timeline timecodes and corresponding script text citations",
+        "C) Video file sizes on the hard drive",
+        "D) NLE software version numbers"
+      ],
+      "required": true
+    },
+    {
+      "field_id": 3,
+      "type": "multiple_choice",
+      "label": "2. Audio Dynamic Levels Audit (CTB.12.03)",
+      "subtext": "What target peak audio dialogue level range is evaluated during a broadcast audio mix audit?",
+      "options": [
+        "A) 0 dB to +6 dB (Clipping)",
+        "B) -12 dB to -6 dB (Standard Broadcast Headroom)",
+        "C) -30 dB to -24 dB (Too Low)",
+        "D) -60 dB to -40 dB (Ambient Floor)"
+      ],
+      "required": true
+    },
+    {
+      "field_id": 4,
+      "type": "multiple_choice",
+      "label": "3. Timecode Syntax (CTB.01.03)",
+      "subtext": "What standard representation format is used for frame-accurate timeline timecode references?",
+      "options": [
+        "A) HH:MM:SS:FF (Hours:Minutes:Seconds:Frames)",
+        "B) MM:SS:MS (Minutes:Seconds:Milliseconds)",
+        "C) DD:HH:MM (Days:Hours:Minutes)",
+        "D) SS:FF (Seconds:Frames)"
+      ],
+      "required": true
+    },
+    {
+      "field_id": 5,
+      "type": "checkbox_group",
+      "label": "4. Technical Checklist for Rough Cut Review (Multi-Select)",
+      "subtext": "Select ALL technical criteria required for evaluating J-cut and L-cut split edit execution:",
+      "options": [
+        "Checking for smooth audio leads without micro-clicks or pops",
+        "Verifying that continuing dialogue aligns logically with B-roll reaction shots",
+        "Ensuring background music ducking keeps voiceovers dominant",
+        "Changing the sequence resolution to random frame rates"
+      ],
+      "required": true
+    },
+    {
+      "field_id": 6,
+      "type": "fill_in_blank",
+      "label": "5. L-Cut Split Edit Mechanics",
+      "subtext": "When evaluating an L-Cut in a news package, reviewers check whether the continuing dialogue matches the visual ________ cutaway shot.",
+      "placeholder": "Enter key term (e.g., reaction / B-roll)...",
+      "required": true
+    },
+    {
+      "field_id": 7,
+      "type": "reflection",
+      "label": "6. Journalistic Integrity in Editing (Reflection)",
+      "subtext": "Explain how comparing a written broadcast script against a rough cut edit ensures factual accuracy and journalistic integrity.",
+      "placeholder": "Explain how cross-referencing scripts prevents taking soundbites out of context...",
+      "required": true
+    },
+    {
+      "field_id": 8,
+      "type": "reflection",
+      "label": "7. Value of NLE Technical Terminology",
+      "subtext": "Why must peer critique in a broadcast seminar use specific NLE terminology (e.g., 'apply rolling edit at 00:14:02') rather than vague opinions?",
+      "placeholder": "Discuss how precise technical language yields actionable, professional timeline edits...",
+      "required": true
+    },
+    {
+      "field_id": 9,
+      "type": "true_false",
+      "label": "8. Evaluation Criteria Principles",
+      "subtext": "Peer reviews should focus purely on subjective personal preference rather than standardized rubric criteria.",
+      "required": true
+    },
+    {
+      "field_id": 10,
+      "type": "select_rubric",
+      "label": "9. Self-Assessment: Seminar Peer Critique Mastery",
+      "subtext": "Select your level of mastery in conducting timecode-referenced peer reviews and executing timeline revisions:",
+      "options": [
+        "Level 4 - Advanced: I cite precise timecodes, evaluate audio/visual split edits, and give actionable NLE feedback.",
+        "Level 3 - Proficient: I can identify J/L cut issues, check audio levels, and write timecode notes with guidance.",
+        "Level 2 - Developing: I can locate basic visual errors but struggle to audit audio levels and split edit timing.",
+        "Level 1 - Beginning: I need assistance navigating timeline timecodes and understanding editing rubrics."
+      ],
+      "required": true
+    }
+  ]
+}));
 </script>
 </body>
 </html>
